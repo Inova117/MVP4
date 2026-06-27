@@ -9,3 +9,6 @@ build
 out
 .vercel
 *.log
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

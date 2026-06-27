@@ -1,103 +1,140 @@
-// Data Source Selector Component
+// Data Source Selector — switches the active dataset (drives the whole dashboard).
 'use client'
 
-import { useState, useEffect } from 'react'
-import { CheckCircleIcon, ChevronDownIcon } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 import {
-    getAllDataSources,
-    getActiveDataSource,
-    setActiveDataSource,
-    type DataSourceType
+  CheckIcon,
+  ChevronsUpDownIcon,
+  BarChart3Icon,
+  MegaphoneIcon,
+  DatabaseIcon,
+  ShoppingBagIcon,
+  type LucideIcon,
+} from 'lucide-react'
+import {
+  getAllDataSources,
+  getActiveDataSource,
+  setActiveDataSource,
+  type DataSourceType,
 } from '@/lib/mock-data/data-source-registry'
 
+const SOURCE_META: Record<DataSourceType, { icon: LucideIcon; color: string }> =
+  {
+    'google-analytics': { icon: BarChart3Icon, color: '#0ea5e9' },
+    'meta-ads': { icon: MegaphoneIcon, color: '#8b5cf6' },
+    'internal-saas': { icon: DatabaseIcon, color: '#6366f1' },
+    ecommerce: { icon: ShoppingBagIcon, color: '#14b8a6' },
+  }
+
 export function DataSourceSelector() {
-    const [isOpen, setIsOpen] = useState(false)
-    const [activeSource, setActive] = useState<DataSourceType>('google-analytics')
+  const [isOpen, setIsOpen] = useState(false)
+  const [activeSource, setActive] = useState<DataSourceType>('google-analytics')
+  const ref = useRef<HTMLDivElement>(null)
 
-    const sources = getAllDataSources()
-    const currentSource = sources.find(s => s.id === activeSource)
+  const sources = getAllDataSources()
+  const current = sources.find((s) => s.id === activeSource)
+  const CurrentIcon = SOURCE_META[activeSource]?.icon ?? BarChart3Icon
 
-    useEffect(() => {
-        // Load from localStorage
-        setActive(getActiveDataSource())
-    }, [])
+  useEffect(() => {
+    setActive(getActiveDataSource())
+  }, [])
 
-    const handleSelect = (sourceId: DataSourceType) => {
-        setActive(sourceId)
-        setActiveDataSource(sourceId)
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
         setIsOpen(false)
-
-        // Reload page to apply new data source
-        window.location.reload()
     }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
 
-    return (
-        <div className="relative">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary-500 transition-all shadow-sm min-w-[280px]"
-            >
-                <span className="text-2xl">{currentSource?.icon}</span>
-                <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-foreground">{currentSource?.name}</div>
-                    <div className="text-xs text-muted-foreground">Data Source</div>
-                </div>
-                <ChevronDownIcon className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+  const handleSelect = (sourceId: DataSourceType) => {
+    if (sourceId !== activeSource) {
+      setActive(sourceId)
+      setActiveDataSource(sourceId) // dispatches `dataSourceChanged` — dashboard reacts live
+    }
+    setIsOpen(false)
+  }
 
-            {isOpen && (
-                <>
-                    <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setIsOpen(false)}
-                    />
-                    <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden animate-slide-up">
-                        <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-                            <p className="text-xs text-muted-foreground px-3 py-2">
-                                Switch between different data sources to see various metrics
-                            </p>
-                        </div>
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 text-left shadow-sm transition-colors hover:border-primary/40"
+      >
+        <span
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+          style={{
+            backgroundColor: `${SOURCE_META[activeSource]?.color}1f`,
+            color: SOURCE_META[activeSource]?.color,
+          }}
+        >
+          <CurrentIcon className="h-4 w-4" />
+        </span>
+        <span className="hidden leading-tight sm:block">
+          <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Data Source
+          </span>
+          <span className="block max-w-[150px] truncate text-sm font-semibold text-foreground">
+            {current?.name}
+          </span>
+        </span>
+        <ChevronsUpDownIcon className="h-4 w-4 text-muted-foreground" />
+      </button>
 
-                        <div className="max-h-96 overflow-y-auto">
-                            {sources.map((source) => (
-                                <button
-                                    key={source.id}
-                                    onClick={() => handleSelect(source.id)}
-                                    className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${source.id === activeSource ? 'bg-primary-50 dark:bg-primary-950/20' : ''
-                                        }`}
-                                >
-                                    <span className="text-2xl mt-0.5">{source.icon}</span>
-                                    <div className="flex-1 text-left">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium text-foreground">{source.name}</span>
-                                            {source.id === activeSource && (
-                                                <CheckCircleIcon className="w-4 h-4 text-primary-600" />
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground mt-0.5">{source.description}</p>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <span className={`text-xs px-2 py-0.5 rounded-full ${source.category === 'marketing'
-                                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                                    : source.category === 'business'
-                                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                                        : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                }`}>
-                                                {source.category}
-                                            </span>
-                                            <span className={`text-xs px-2 py-0.5 rounded-full ${source.status === 'active'
-                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                                                    : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                                                }`}>
-                                                {source.status}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </>
-            )}
+      {isOpen && (
+        <div className="absolute left-0 top-full z-40 mt-2 w-80 overflow-hidden rounded-2xl border border-border bg-popover shadow-card-hover animate-slide-up">
+          <div className="border-b border-border/70 px-4 py-2.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              Switch source — the dashboard updates instantly
+            </p>
+          </div>
+          <div className="max-h-96 overflow-y-auto p-1.5 custom-scrollbar">
+            {sources.map((source) => {
+              const meta = SOURCE_META[source.id]
+              const Icon = meta?.icon ?? BarChart3Icon
+              const active = source.id === activeSource
+              return (
+                <button
+                  key={source.id}
+                  onClick={() => handleSelect(source.id)}
+                  className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    active ? 'bg-primary/10' : 'hover:bg-muted'
+                  }`}
+                >
+                  <span
+                    className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg"
+                    style={{
+                      backgroundColor: `${meta?.color}1f`,
+                      color: meta?.color,
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">
+                        {source.name}
+                      </span>
+                      {source.status === 'active' && (
+                        <span className="chip bg-success/10 text-success">
+                          Live
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {source.description}
+                    </span>
+                  </span>
+                  {active && (
+                    <CheckIcon className="mt-1 h-4 w-4 shrink-0 text-primary" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
-    )
+      )}
+    </div>
+  )
 }

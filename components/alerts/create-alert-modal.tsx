@@ -105,7 +105,7 @@ export function CreateAlertModal({
                 className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
               />
               {errors.name && (
-                <p className="text-xs text-red-500">{errors.name.message}</p>
+                <p className="text-xs text-danger">{errors.name.message}</p>
               )}
             </div>
 
@@ -126,7 +126,7 @@ export function CreateAlertModal({
                 ))}
               </select>
               {errors.metric_id && (
-                <p className="text-xs text-red-500">
+                <p className="text-xs text-danger">
                   {errors.metric_id.message}
                 </p>
               )}
@@ -159,7 +159,7 @@ export function CreateAlertModal({
                   className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
                 />
                 {errors.threshold && (
-                  <p className="text-xs text-red-500">
+                  <p className="text-xs text-danger">
                     {errors.threshold.message}
                   </p>
                 )}
@@ -177,7 +177,7 @@ export function CreateAlertModal({
                 className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
               />
               {errors.notification_email && (
-                <p className="text-xs text-red-500">
+                <p className="text-xs text-danger">
                   {errors.notification_email.message}
                 </p>
               )}

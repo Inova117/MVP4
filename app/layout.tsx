@@ -1,28 +1,51 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import { Providers } from '@/components/providers'
 import { DemoBanner } from '@/components/demo-banner'
-import { BackendFloatButton } from '@/components/backend-float-button'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const display = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-    title: 'Analytics Dashboard - Demo',
-    description: 'Enterprise analytics platform with real-time insights',
+  title: 'Nexus Analytics — Business Intelligence Platform',
+  description:
+    'Enterprise analytics platform with real-time KPIs, AI insights, and multi-source dashboards.',
 }
 
 export default function RootLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode
 }) {
-    return (
-        <html lang="en">
-            <body className={inter.className}>
-                <DemoBanner />
-                {children}
-                <BackendFloatButton />
-            </body>
-        </html>
-    )
+  return (
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${display.variable} ${mono.variable}`}
+    >
+      <body className="font-sans">
+        <Providers>
+          <DemoBanner />
+          {children}
+        </Providers>
+      </body>
+    </html>
+  )
 }

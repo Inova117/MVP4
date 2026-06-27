@@ -1,118 +1,174 @@
-// KPI Widget - Displays single metric value with trend
+// KPI Widget - single metric with trend + sparkline
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { dataClient } from '@/lib/supabase'
 import { useDateRange } from '@/lib/contexts/date-range-context'
 import type { Widget } from '@/types'
-import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react'
-import { subDays } from 'date-fns'
+import {
+  TrendingUpIcon,
+  TrendingDownIcon,
+  Users,
+  MousePointerClick,
+  Target,
+  LogOut,
+  DollarSign,
+  Eye,
+  TrendingUp,
+  ShoppingCart,
+  Tag,
+  ShoppingBag,
+  UserPlus,
+  Activity,
+  BarChart3,
+  type LucideIcon,
+} from 'lucide-react'
+import { Area, AreaChart, ResponsiveContainer } from 'recharts'
+import { BRAND, formatCompact } from '@/lib/chart-theme'
 
-interface KpiWidgetProps {
-    widget: Widget
+const ICONS: Record<string, LucideIcon> = {
+  Users,
+  MousePointerClick,
+  Target,
+  LogOut,
+  DollarSign,
+  Eye,
+  TrendingUp,
+  ShoppingCart,
+  Tag,
+  ShoppingBag,
+  UserPlus,
+  Activity,
+  BarChart3,
 }
 
-export function KpiWidget({ widget }: KpiWidgetProps) {
-    const { startDate, endDate } = useDateRange()
-    const [value, setValue] = useState<number | null>(null)
-    const [trend, setTrend] = useState<number>(0)
-    const [loading, setLoading] = useState(true)
+function aggregate(values: number[], agg: 'sum' | 'avg' | 'last'): number {
+  if (values.length === 0) return 0
+  if (agg === 'sum') return values.reduce((a, b) => a + b, 0)
+  if (agg === 'last') return values[values.length - 1]
+  return values.reduce((a, b) => a + b, 0) / values.length
+}
 
-    const loadKPI = useCallback(async () => {
-        try {
-            setLoading(true)
+export function KpiWidget({ widget }: { widget: Widget }) {
+  const { startDate, endDate } = useDateRange()
+  const [series, setSeries] = useState<number[]>([])
+  const [loading, setLoading] = useState(true)
 
-            // Get current period data
-            const currentData = await dataClient.getMetricData(
-                widget.metric_id,
-                startDate,
-                endDate
-            )
+  const agg = widget.config.aggregation ?? 'avg'
 
-            if (currentData.length === 0) {
-                setValue(0)
-                setTrend(0)
-                return
-            }
-
-            // Calculate current value (average or sum based on metric)
-            const currentValue =
-                currentData.reduce((sum, d) => sum + d.value, 0) / currentData.length
-
-            // Get previous period for comparison
-            const daysDiff = Math.ceil(
-                (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-            )
-            const prevStart = subDays(startDate, daysDiff)
-            const prevEnd = subDays(endDate, daysDiff)
-
-            const prevData = await dataClient.getMetricData(
-                widget.metric_id,
-                prevStart,
-                prevEnd
-            )
-
-            if (prevData.length > 0) {
-                const prevValue =
-                    prevData.reduce((sum, d) => sum + d.value, 0) / prevData.length
-                const percentChange = ((currentValue - prevValue) / prevValue) * 100
-                setTrend(percentChange)
-            }
-
-            setValue(currentValue)
-        } catch (error) {
-            console.error('Error loading KPI:', error)
-            setValue(0)
-        } finally {
-            setLoading(false)
-        }
-    }, [widget.metric_id, startDate, endDate])
-
-    useEffect(() => {
-        loadKPI()
-    }, [loadKPI])
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full min-h-[120px]">
-                <div className="w-8 h-8 border-2 border-primary-500/30 border-t-primary-600 rounded-full animate-spin"></div>
-            </div>
-        )
+  const loadKPI = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await dataClient.getMetricData(
+        widget.metric_id,
+        startDate,
+        endDate
+      )
+      setSeries(data.map((d) => d.value))
+    } catch (error) {
+      console.error('Error loading KPI:', error)
+      setSeries([])
+    } finally {
+      setLoading(false)
     }
+  }, [widget.metric_id, startDate, endDate])
 
-    const formattedValue = value !== null ? value.toLocaleString('en-US', {
+  useEffect(() => {
+    loadKPI()
+  }, [loadKPI])
+
+  if (loading) {
+    return (
+      <div className="flex h-full flex-col justify-between">
+        <div className="skeleton h-9 w-28" />
+        <div className="skeleton h-10 w-full" />
+      </div>
+    )
+  }
+
+  const value = aggregate(series, agg)
+
+  // Trend: aggregate first vs second half of the visible period.
+  let trend = 0
+  if (series.length >= 2) {
+    const mid = Math.floor(series.length / 2)
+    const prev = aggregate(series.slice(0, mid), agg)
+    const curr = aggregate(series.slice(mid), agg)
+    if (prev !== 0) trend = ((curr - prev) / Math.abs(prev)) * 100
+  }
+
+  const color = widget.config.color || BRAND
+  const Icon = (widget.config.icon && ICONS[widget.config.icon]) || BarChart3
+
+  const formatted = widget.config.compact
+    ? formatCompact(value)
+    : value.toLocaleString('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
-    }) : '0'
+      })
+  const displayValue = `${widget.config.prefix || ''}${formatted}${widget.config.suffix || ''}`
 
-    const displayValue = `${widget.config.prefix || ''}${formattedValue}${widget.config.suffix || ''}`
+  const sparkData = series.map((v, i) => ({ i, v }))
+  const up = trend >= 0
+  const gradId = `spark-${widget.id}`
 
-    return (
-        <div className="flex flex-col items-center justify-center h-full py-2 animate-fade-in text-center">
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-foreground sm:text-[2rem]">
+            {displayValue}
+          </div>
+          {series.length >= 2 && trend !== 0 && (
             <div
-                className="text-5xl font-display font-bold mb-3 tracking-tight drop-shadow-sm"
-                style={{ color: widget.config.color || '#6366f1' }}
+              className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                up ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+              }`}
             >
-                {displayValue}
+              {up ? (
+                <TrendingUpIcon className="h-3.5 w-3.5" />
+              ) : (
+                <TrendingDownIcon className="h-3.5 w-3.5" />
+              )}
+              {Math.abs(trend).toFixed(1)}%
+              <span className="font-medium text-muted-foreground">vs prev</span>
             </div>
-
-            {trend !== 0 && (
-                <div
-                    className={`flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors ${trend >= 0
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                        }`}
-                >
-                    {trend >= 0 ? (
-                        <TrendingUpIcon className="w-4 h-4" />
-                    ) : (
-                        <TrendingDownIcon className="w-4 h-4" />
-                    )}
-                    <span>
-                        {Math.abs(trend).toFixed(1)}% vs period
-                    </span>
-                </div>
-            )}
+          )}
         </div>
-    )
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+          style={{ backgroundColor: `${color}1f`, color }}
+        >
+          <Icon className="h-5 w-5" />
+        </span>
+      </div>
+
+      {sparkData.length > 1 && (
+        <div className="mt-auto -mx-1 h-12 pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={sparkData}
+              margin={{ top: 2, right: 2, bottom: 0, left: 2 }}
+            >
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={color}
+                strokeWidth={2}
+                fill={`url(#${gradId})`}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  )
 }

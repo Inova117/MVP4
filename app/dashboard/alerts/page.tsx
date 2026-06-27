@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { PlusIcon, LayoutDashboardIcon, BellIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 import { AlertList } from '@/components/alerts/alert-list'
 import { CreateAlertModal } from '@/components/alerts/create-alert-modal'
 import { getDataClient } from '@/lib/supabase'
+import { AppShell } from '@/components/app-shell'
 import type { Alert } from '@/types'
 
 export default function AlertsPage() {
@@ -16,8 +16,7 @@ export default function AlertsPage() {
 
   const loadAlerts = useCallback(async () => {
     try {
-      const data = await dataClient.getAlerts()
-      setAlerts(data)
+      setAlerts(await dataClient.getAlerts())
     } catch (error) {
       console.error('Failed to load alerts:', error)
     } finally {
@@ -29,69 +28,69 @@ export default function AlertsPage() {
     loadAlerts()
   }, [loadAlerts])
 
-  // Reuse header style from dashboard, but with different content
-  // TODO: Ideally extract header component
+  const activeCount = alerts.filter((a) => a.is_active).length
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-white/10 glass">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-display font-bold text-foreground tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-                Alerts
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1.5 font-medium">
-                Monitor metrics and get notified
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Navigation Tabs */}
-              <div className="flex bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl">
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all"
-                >
-                  <LayoutDashboardIcon className="w-4 h-4" />
-                  Dashboard
-                </Link>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-slate-700 text-primary-600 shadow-sm">
-                  <BellIcon className="w-4 h-4" />
-                  Alerts
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-500 hover:shadow-glow transition-all duration-300 font-medium text-sm shadow-primary"
-              >
-                <PlusIcon className="w-4 h-4" />
-                New Alert
-              </button>
-            </div>
-          </div>
+    <AppShell
+      title="Alerts"
+      subtitle="Get notified the moment a metric crosses a threshold"
+      actions={
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn-primary"
+        >
+          <PlusIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">New Alert</span>
+        </button>
+      }
+    >
+      {!loading && alerts.length > 0 && (
+        <div className="mb-5 grid grid-cols-3 gap-4">
+          <StatCard label="Total Alerts" value={alerts.length} />
+          <StatCard label="Active" value={activeCount} accent="text-success" />
+          <StatCard
+            label="Paused"
+            value={alerts.length - activeCount}
+            accent="text-muted-foreground"
+          />
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <AlertList alerts={alerts} onUpdate={loadAlerts} />
-        )}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-primary border-t-transparent" />
+        </div>
+      ) : (
+        <AlertList alerts={alerts} onUpdate={loadAlerts} />
+      )}
 
-      {/* Mobile / Modals */}
       {showCreateModal && (
         <CreateAlertModal
           onClose={() => setShowCreateModal(false)}
           onSuccess={loadAlerts}
         />
       )}
+    </AppShell>
+  )
+}
+
+function StatCard({
+  label,
+  value,
+  accent = 'text-foreground',
+}: {
+  label: string
+  value: number
+  accent?: string
+}) {
+  return (
+    <div className="surface p-4">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p
+        className={`mt-1 font-display text-2xl font-bold tabular-nums ${accent}`}
+      >
+        {value}
+      </p>
     </div>
   )
 }

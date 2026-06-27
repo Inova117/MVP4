@@ -7,62 +7,77 @@ import { Widget } from './widget'
 import type { Widget as WidgetType } from '@/types'
 
 interface SortableWidgetProps {
-    widget: WidgetType
-    onDelete: () => void
+  widget: WidgetType
+  onDelete: () => void
+  onUpdate: () => void
 }
 
-export function SortableWidget({ widget, onDelete }: SortableWidgetProps) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: widget.id })
+// Static maps so Tailwind keeps these classes in the build.
+const lgColSpan: Record<number, string> = {
+  1: 'lg:col-span-1',
+  2: 'lg:col-span-2',
+  3: 'lg:col-span-3',
+  4: 'lg:col-span-4',
+  5: 'lg:col-span-5',
+  6: 'lg:col-span-6',
+  7: 'lg:col-span-7',
+  8: 'lg:col-span-8',
+  9: 'lg:col-span-9',
+  10: 'lg:col-span-10',
+  11: 'lg:col-span-11',
+  12: 'lg:col-span-12',
+}
+const lgRowSpan: Record<number, string> = {
+  1: 'lg:row-span-1',
+  2: 'lg:row-span-2',
+  3: 'lg:row-span-3',
+  4: 'lg:row-span-4',
+  5: 'lg:row-span-5',
+  6: 'lg:row-span-6',
+}
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-    }
+export function SortableWidget({
+  widget,
+  onDelete,
+  onUpdate,
+}: SortableWidgetProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: widget.id })
 
-    // Map for Tailwind class detection (safelist)
-    const colSpanMap: Record<number, string> = {
-        1: 'col-span-1',
-        2: 'col-span-2',
-        3: 'col-span-3',
-        4: 'col-span-4',
-        5: 'col-span-5',
-        6: 'col-span-6',
-        7: 'col-span-7',
-        8: 'col-span-8',
-        9: 'col-span-9',
-        10: 'col-span-10',
-        11: 'col-span-11',
-        12: 'col-span-12',
-    }
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 40 : undefined,
+  }
 
-    const rowSpanMap: Record<number, string> = {
-        1: 'row-span-1',
-        2: 'row-span-2',
-        3: 'row-span-3',
-        4: 'row-span-4',
-        5: 'row-span-5',
-        6: 'row-span-6',
-    }
+  const width = Math.min(widget.width, 12)
+  const height = Math.min(widget.height, 6)
+  const colSpan = lgColSpan[width] || 'lg:col-span-12'
+  const rowSpan = lgRowSpan[height] || 'lg:row-span-2'
+  // KPI cards sit two-up on tablet; charts go full width.
+  const smSpan = width <= 3 ? 'sm:col-span-1' : 'sm:col-span-2'
+  const minH = width <= 3 ? 'min-h-[150px]' : 'min-h-[320px]'
 
-    const colSpan = colSpanMap[Math.min(widget.width, 12)] || 'col-span-12'
-    const rowSpan = rowSpanMap[Math.min(widget.height, 6)] || 'row-span-1'
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className={`${colSpan} ${rowSpan}`}
-            {...attributes}
-        >
-            <Widget widget={widget} onDelete={onDelete} dragHandleProps={listeners} />
-        </div>
-    )
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${smSpan} ${colSpan} ${rowSpan} ${minH}`}
+      {...attributes}
+    >
+      <Widget
+        widget={widget}
+        onDelete={onDelete}
+        onUpdate={onUpdate}
+        dragHandleProps={listeners}
+      />
+    </div>
+  )
 }

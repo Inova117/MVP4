@@ -76,8 +76,8 @@ export function AlertList({ alerts, onUpdate }: AlertListProps) {
               <div
                 className={`p-3 rounded-xl ${
                   alert.is_active
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 <ActivityIcon className="w-6 h-6" />
@@ -104,14 +104,14 @@ export function AlertList({ alerts, onUpdate }: AlertListProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100">
               <button
                 onClick={() => handleToggle(alert)}
                 disabled={loadingId === alert.id}
                 className={`p-2 rounded-lg transition-colors ${
                   alert.is_active
-                    ? 'text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20'
-                    : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ? 'text-primary hover:bg-primary/10'
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
                 title={alert.is_active ? 'Pause Alert' : 'Resume Alert'}
               >
@@ -124,7 +124,7 @@ export function AlertList({ alerts, onUpdate }: AlertListProps) {
               <button
                 onClick={() => handleDelete(alert.id)}
                 disabled={loadingId === alert.id}
-                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                className="p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors"
                 title="Delete Alert"
               >
                 <Trash2Icon className="w-5 h-5" />
@@ -134,7 +134,7 @@ export function AlertList({ alerts, onUpdate }: AlertListProps) {
 
           {/* Active Indicator Bar */}
           {alert.is_active && (
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-accent" />
           )}
         </div>
       ))}

@@ -6,115 +6,118 @@ import { dataClient } from '@/lib/supabase'
 import { useDateRange } from '@/lib/contexts/date-range-context'
 import type { Widget } from '@/types'
 import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from 'recharts'
 import { format } from 'date-fns'
+import {
+  BRAND,
+  axisTick,
+  gridStroke,
+  tooltipStyle,
+  tooltipItemStyle,
+  tooltipLabelStyle,
+  formatCompact,
+} from '@/lib/chart-theme'
+import { ChartLoading, ChartEmpty } from './chart-state'
 
-interface LineChartWidgetProps {
-    widget: Widget
-}
+export function LineChartWidget({ widget }: { widget: Widget }) {
+  const { startDate, endDate } = useDateRange()
+  const [data, setData] = useState<Array<{ date: string; value: number }>>([])
+  const [loading, setLoading] = useState(true)
 
-export function LineChartWidget({ widget }: LineChartWidgetProps) {
-    const { startDate, endDate } = useDateRange()
-    const [data, setData] = useState<Array<{ date: string; value: number }>>([])
-    const [loading, setLoading] = useState(true)
-
-    const loadData = useCallback(async () => {
-        try {
-            setLoading(true)
-
-            const metricData = await dataClient.getMetricData(
-                widget.metric_id,
-                startDate,
-                endDate
-            )
-
-            const formatted = metricData.map((d) => ({
-                date: format(new Date(d.timestamp), 'MMM dd'),
-                value: d.value,
-            }))
-
-            setData(formatted)
-        } catch (error) {
-            console.error('Error loading chart data:', error)
-            setData([])
-        } finally {
-            setLoading(false)
-        }
-    }, [widget.metric_id, startDate, endDate])
-
-    useEffect(() => {
-        loadData()
-    }, [loadData])
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        )
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const metricData = await dataClient.getMetricData(
+        widget.metric_id,
+        startDate,
+        endDate
+      )
+      setData(
+        metricData.map((d) => ({
+          date: format(new Date(d.timestamp), 'MMM d'),
+          value: d.value,
+        }))
+      )
+    } catch (error) {
+      console.error('Error loading chart data:', error)
+      setData([])
+    } finally {
+      setLoading(false)
     }
+  }, [widget.metric_id, startDate, endDate])
 
-    if (data.length === 0) {
-        return (
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-                No data available for this period
-            </div>
-        )
-    }
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
-    return (
-        <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-            <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                    <linearGradient id={`gradient-${widget.id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={widget.config.color || '#6366f1'} stopOpacity={0.2} />
-                        <stop offset="95%" stopColor={widget.config.color || '#6366f1'} stopOpacity={0} />
-                    </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border/40" horizontal={true} vertical={false} />
-                <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: 'currentColor' }}
-                    tickLine={false}
-                    axisLine={false}
-                    className="text-muted-foreground"
-                    dy={10}
-                />
-                <YAxis
-                    tick={{ fontSize: 11, fill: 'currentColor' }}
-                    tickLine={false}
-                    axisLine={false}
-                    className="text-muted-foreground"
-                    tickFormatter={(value) => `${value}`}
-                />
-                <Tooltip
-                    contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '0.75rem',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                        fontSize: '12px',
-                    }}
-                    itemStyle={{ color: 'var(--foreground)' }}
-                    labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '0.25rem' }}
-                />
-                <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={widget.config.color || '#6366f1'}
-                    strokeWidth={3}
-                    dot={{ r: 3, strokeWidth: 2, fill: 'var(--background)' }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    fill={`url(#gradient-${widget.id})`}
-                />
-            </LineChart>
-        </ResponsiveContainer>
-    )
+  if (loading) return <ChartLoading />
+  if (data.length === 0) return <ChartEmpty />
+
+  const color = widget.config.color || BRAND
+  const { prefix = '', suffix = '' } = widget.config
+  const gradId = `line-grad-${widget.id}`
+
+  return (
+    <ResponsiveContainer width="100%" height="100%" minHeight={180}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid
+          stroke={gridStroke}
+          strokeOpacity={0.6}
+          vertical={false}
+        />
+        <XAxis
+          dataKey="date"
+          tick={axisTick}
+          tickLine={false}
+          axisLine={false}
+          minTickGap={28}
+          dy={8}
+        />
+        <YAxis
+          tick={axisTick}
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickFormatter={(v) => `${prefix}${formatCompact(v)}`}
+        />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          itemStyle={tooltipItemStyle}
+          labelStyle={tooltipLabelStyle}
+          formatter={(v: number) => [
+            `${prefix}${v.toLocaleString()}${suffix}`,
+            widget.title,
+          ]}
+          cursor={{ stroke: color, strokeOpacity: 0.3, strokeWidth: 1 }}
+        />
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke={color}
+          strokeWidth={2.5}
+          fill={`url(#${gradId})`}
+          dot={false}
+          activeDot={{
+            r: 5,
+            strokeWidth: 2,
+            stroke: 'hsl(var(--card))',
+            fill: color,
+          }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
 }

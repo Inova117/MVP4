@@ -2,74 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Nexus Analytics — Design Tokens
+   One coherent system: Indigo/Violet brand · Slate neutrals
+   Emerald (success) · Amber (warning) · Rose (danger) · Sky (info)
+   ============================================================ */
+
 @layer base {
   :root {
-    /* Premium Light Mode */
-    --background: 210 40% 98%;
-    /* Slightly cool white */
+    --background: 220 33% 98%;
     --foreground: 222 47% 11%;
-    /* Deep navy */
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
+    --card-muted: 220 33% 98%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
+    /* Brand — Indigo */
     --primary: 243 75% 59%;
-    /* Indigo-600 */
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    /* Brand accent — Violet (replaces old magenta secondary) */
+    --accent: 263 70% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
+    --secondary: 214 32% 95%;
+    --secondary-foreground: 222 47% 14%;
+
+    --muted: 214 32% 95%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
+    /* Semantic states */
+    --success: 152 58% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 33 92% 50%;
+    --warning-foreground: 30 50% 12%;
+    --danger: 350 84% 58%;
+    --danger-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 350 84% 58%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 243 75% 59%;
 
-    --radius: 0.75rem;
+    --radius: 0.85rem;
+
+    /* Sidebar — always deep navy for premium contrast in both themes */
+    --sidebar: 224 47% 9%;
+    --sidebar-elevated: 222 40% 13%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-muted: 215 20% 60%;
+    --sidebar-border: 218 33% 18%;
   }
 
   .dark {
-    /* Premium Dark Mode (Deep Zinc/Slate) */
-    --background: 222 47% 11%;
-    /* Very dark navy/slate */
-    --foreground: 210 40% 98%;
+    --background: 224 47% 7%;
+    --foreground: 213 31% 94%;
 
-    --card: 217 33% 17%;
-    /* Lighter than bg */
-    --card-foreground: 210 40% 98%;
+    --card: 222 40% 11%;
+    --card-foreground: 213 31% 94%;
+    --card-muted: 222 40% 13%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222 40% 11%;
+    --popover-foreground: 213 31% 94%;
 
-    --primary: 243 75% 59%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 243 80% 67%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --accent: 263 75% 70%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --secondary: 222 33% 16%;
+    --secondary-foreground: 213 31% 94%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 222 33% 16%;
+    --muted-foreground: 215 20% 62%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --success: 152 55% 48%;
+    --warning: 36 92% 56%;
+    --danger: 350 80% 64%;
+    --info: 199 89% 56%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 17%;
-    --ring: 243 75% 59%;
+    --destructive: 350 80% 64%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 218 28% 18%;
+    --input: 218 28% 20%;
+    --ring: 243 80% 67%;
+
+    --sidebar: 226 50% 6%;
+    --sidebar-elevated: 224 40% 10%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-muted: 215 20% 58%;
+    --sidebar-border: 220 30% 14%;
   }
 }
 
@@ -78,64 +109,169 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary;
+    @apply bg-background text-foreground font-sans antialiased;
+    @apply selection:bg-primary/20 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Consistent, on-brand focus states across the app */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
   }
 }
 
-/* Glassmorphism Utilities */
-@layer utilities {
+/* ============================================================
+   Component utilities
+   ============================================================ */
+@layer components {
+  /* Primary surface used by cards & widgets */
+  .surface {
+    @apply bg-card text-card-foreground border border-border/70 rounded-2xl shadow-card;
+  }
+
   .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/5;
+    @apply bg-card/80 backdrop-blur-xl border border-border/60;
   }
 
   .glass-card {
-    @apply bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-300;
+    @apply bg-card/90 backdrop-blur-sm border border-border/70 rounded-2xl shadow-card transition-all duration-300;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/55;
+  }
+
+  .text-gradient-brand {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+           bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_hsl(var(--primary)/0.6)]
+           hover:brightness-110 active:brightness-95 transition-all duration-200
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium
+           text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-200;
+  }
+
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+           bg-primary/10 text-primary hover:bg-primary/15 transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-background border border-input rounded-xl text-sm text-foreground
+           placeholder:text-muted-foreground/60 transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
   }
 }
 
-/* Mermaid diagram styling */
-.mermaid {
-  @apply flex justify-center items-center min-h-[200px];
+/* ============================================================
+   Scrollbars
+   ============================================================ */
+@layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.25);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  /* Subtle dotted grid backdrop for empty/hero areas */
+  .bg-grid {
+    background-image: radial-gradient(hsl(var(--muted-foreground) / 0.12) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
 }
 
-.mermaid svg {
-  @apply max-w-full h-auto;
-}
-
-/* AI Insights Panel Animation */
+/* ============================================================
+   Animations
+   ============================================================ */
 @keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
-
 @keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
 }
 
-.animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out forwards;
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
 }
 
-.animate-slide-out-right {
-  animation: slideOutRight 0.3s ease-in forwards;
+.animate-slide-in-right { animation: slideInRight 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-slide-out-right { animation: slideOutRight 0.28s ease-in forwards; }
+.animate-fade-in { animation: fadeIn 0.4s ease-out both; }
+.animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* SVG line-draw (paths must set pathLength={1}) */
+.animate-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.2s 0.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-draw { animation: none; stroke-dashoffset: 0; }
+  .animate-slide-up, .animate-fade-in, .animate-slide-in-right { animation-duration: 0.01ms !important; }
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  @apply relative overflow-hidden bg-muted rounded-md;
+}
+.skeleton::after {
+  content: '';
+  @apply absolute inset-0 -translate-x-full;
+  background-image: linear-gradient(90deg, transparent, hsl(var(--card) / 0.6), transparent);
+  animation: shimmer 1.6s infinite;
+}
+
+/* Recharts polish */
+.recharts-default-tooltip {
+  border-radius: 0.75rem !important;
+}
+.recharts-cartesian-axis-tick-value {
+  font-variant-numeric: tabular-nums;
 }
